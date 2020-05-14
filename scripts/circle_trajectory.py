@@ -43,7 +43,6 @@ if __name__=='__main__':
     r = 1
     fi = 10
     try:
-        while not rospy.is_shutdown():
-            circle(r,fi)
+        circle(r,fi)
     except rospy.ROSInterruptException:
         pass

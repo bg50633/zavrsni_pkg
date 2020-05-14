@@ -12,8 +12,8 @@ from geometry_msgs.msg import Quaternion
 
 class Node():
     def __init__(self):
-        self.pub = rospy.Publisher('/red/mavros/setpoint_position/local', PoseStamped, queue_size=1)
-        self.sub = rospy.Subscriber('/red/mavros/local_position/odom', Odometry, self.sub_callback)
+        self.pub = rospy.Publisher('mavros/setpoint_position/local', PoseStamped, queue_size=1)
+        self.sub = rospy.Subscriber('mavros/local_position/odom', Odometry, self.sub_callback)
 
         self.odom = Odometry()
         self.pose = PoseStamped()
