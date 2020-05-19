@@ -11,6 +11,8 @@ from trajectory_msgs.msg import MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Vector3
 
+from tf.transformations import *
+
 class HLC():
 
     def __init__(self):
@@ -43,7 +45,7 @@ class HLC():
         self.K_pos = np.array([[1,0,0],[0,1,0],[0,0,1]])
         self.K_vel = np.array([[0.1,0,0],[0,0.1,0],[0,0,0.1]])
 
-        self.a_g = np.array([0, 0, -9.81])
+        self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
 
 
