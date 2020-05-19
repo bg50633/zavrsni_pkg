@@ -16,6 +16,8 @@ class HLC():
     def __init__(self):
         self.attitude_pub = rospy.Publisher('mavros/setpoint_raw/attitude', AttitudeTarget, queue_size=1)
         self.odom_sub = rospy.Subscriber('mavros/global_position/local', Odometry, self.odom_sub_callback)
+        
+        self.trajectory_started = False
         self.trajectory_sub = rospy.Subscriber('mavros/trajectory', MultiDOFJointTrajectoryPoint, self.trajectory_sub_callback)       # potrebno odrediti topic!
 
         self.attitude = AttitudeTarget()
@@ -24,8 +26,8 @@ class HLC():
         self.C_cmd = 0.
 
 
-        self.K_pos = np.array([1,0,0],[0,1,0],[0,0,1])
-        self.K_vel = np.array([0.1,0,0],[0,0.1,0],[0,0,0.1])
+        self.K_pos = np.array([[1,0,0],[0,1,0],[0,0,1]])
+        self.K_vel = np.array([[0.1,0,0],[0,0.1,0],[0,0,0.1]])
 
         self.a_g = np.array([0, 0, -9.81])
         self.k_h = 0.009
