@@ -47,7 +47,6 @@ class HLC():
         self.k_h = 0.009
 
 
-
     def odom_sub_callback(self, data):
         # dohvacanje mjerenih vrijednosti pozicije
         self.p_meas_x = data.pose.pose.position.x
@@ -64,7 +63,6 @@ class HLC():
         self.q_x_meas = data.pose.pose.orientation.x
         self.q_y_meas = data.pose.pose.orientation.y
         self.q_z_meas = data.pose.pose.orientation.z
-
 
 
     def trajectory_sub_callback(self, data):
@@ -117,11 +115,13 @@ class HLC():
         R = np.array([[R11, R12, R13], [R21, R22, R23], [R31, R32, R33]])
         return R
 
+
     def matrix2euler(self, R):
         phi = atan2(R[2][1], R[2][2])
         the = atan2(R[2][0], sqrt(R[2][1] ** 2 + R[2][2] ** 2))
         ksi = atan2(R[1][0], R[0][0])
         return phi, the, ksi
+
 
     def euler2quaternion(self, phi, the, ksi):
         qw = cos(phi/2)*cos(the/2)*cos(ksi/2) + sin(phi/2)*sin(the/2)*sin(ksi/2)
@@ -129,10 +129,6 @@ class HLC():
         qy = cos(phi/2)*sin(the/2)*cos(ksi/2) + sin(phi/2)*cos(the/2)*sin(ksi/2)
         qz = cos(phi/2)*cos(the/2)*sin(ksi/2) - sin(phi/2)*sin(the/2)*cos(ksi/2)
         return qw, qx, qy, qz
-
-
-
-
 
 
     def calculate_reference_values(self):
@@ -146,6 +142,7 @@ class HLC():
         self.R_ref = self.euler2matrix(phi, the, ksi)
         self.heading = ksi
 
+
     def calculate_measured_values(self):
         # formiranje varijabli povratne veze
         self.p_meas = np.array([self.p_meas_x, self.p_meas_y, self.p_meas_z])
@@ -153,10 +150,6 @@ class HLC():
         
         phi, the, ksi = self.quaternion2euler(self.q_w_meas, self.q_x_meas, self.q_y_meas, self.q_z_meas)
         self.R_meas = self.euler2matrix(phi, the, ksi)
-
-
-
-
 
 
     def calculate_a_des(self):
