@@ -33,17 +33,17 @@ class HLC():
 
 
     def odom_sub_callback(self, data):
-        # dohvaćanje mjerenih vrijednosti pozicije
+        # dohvacanje mjerenih vrijednosti pozicije
         self.p_meas_x = data.pose.pose.position.x
         self.p_meas_y = data.pose.pose.position.y
         self.p_meas_z = data.pose.pose.position.z
 
-        # dohvaćanje mjerenih vrijednosti brzine
+        # dohvacanje mjerenih vrijednosti brzine
         self.v_meas_x = data.twist.twist.linear.x
         self.v_meas_y = data.twist.twist.linear.y
         self.v_meas_z = data.twist.twist.linear.z
 
-        # dohvaćanje mjerenih vrijednosti orijentacije
+        # dohvacanje mjerenih vrijednosti orijentacije
         self.q_w_meas = data.pose.pose.orientation.w
         self.q_x_meas = data.pose.pose.orientation.x
         self.q_y_meas = data.pose.pose.orientation.y
