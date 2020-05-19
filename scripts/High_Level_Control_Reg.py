@@ -32,8 +32,30 @@ class HLC():
         self.q_y_meas = 0
         self.q_z_meas = 0
         self.odom_sub = rospy.Subscriber('mavros/global_position/local', Odometry, self.odom_sub_callback)
-        
+
+        # Initialize all class variables used in self.trajectory_sub_callback
         self.trajectory_started = False
+
+        self.p_ref_x = 0
+        self.p_ref_y = 0
+        self.p_ref_z = 0
+
+        self.v_ref_x = 0
+        self.v_ref_y = 0
+        self.v_ref_z = 0
+
+        self.a_ref_x = 0
+        self.a_ref_y = 0
+        self.a_ref_z = 0
+
+        self.w_ref_x = 0
+        self.w_ref_y = 0
+        self.w_ref_z = 0
+
+        self.q_w_ref = 1
+        self.q_x_ref = 0
+        self.q_y_ref = 0
+        self.q_z_ref = 0
         self.trajectory_sub = rospy.Subscriber('mavros/trajectory', MultiDOFJointTrajectoryPoint, self.trajectory_sub_callback)
 
         self.attitude = AttitudeTarget()
@@ -44,9 +66,11 @@ class HLC():
 
         self.K_pos = np.array([[1,0,0],[0,1,0],[0,0,1]])
         self.K_vel = np.array([[0.1,0,0],[0,0.1,0],[0,0,0.1]])
+        self.D = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.01]])
 
         self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
+        self.C_max = 137.8
 
 
     def odom_sub_callback(self, data):
@@ -124,13 +148,13 @@ class HLC():
         ksi = atan2(R[1][0], R[0][0])
         return phi, the, ksi
 
-
     def euler2quaternion(self, phi, the, ksi):
         qw = cos(phi/2)*cos(the/2)*cos(ksi/2) + sin(phi/2)*sin(the/2)*sin(ksi/2)
         qx = sin(phi/2)*cos(the/2)+cos(ksi/2) - cos(phi/2)*sin(the/2)*sin(ksi/2)
         qy = cos(phi/2)*sin(the/2)*cos(ksi/2) + sin(phi/2)*cos(the/2)*sin(ksi/2)
         qz = cos(phi/2)*cos(the/2)*sin(ksi/2) - sin(phi/2)*sin(the/2)*cos(ksi/2)
         return qw, qx, qy, qz
+
 
 
     def calculate_reference_values(self):
@@ -157,8 +181,10 @@ class HLC():
     def calculate_a_des(self):
         # racunanje     a_fb = K_pos*(p_ref - p_meas) + K_vel*(v_ref - v_meas)
         self.a_fb = np.dot(self.K_pos, (self.p_ref - self.p_meas)) + np.dot(self.K_vel, (self.v_ref - self.v_meas))     # (48)
-        # racunanje a_des
-        self.a_des = self.a_fb + self.a_ref + self.a_g      # (47)
+        # racunanje     a_rd = -R_ref * D * R_ref^T * v_ref
+        self.a_rd = -1*np.dot(np.dot(np.dot(self.R_ref, self.D), self.R_ref.T), self.v_ref)     # (49)
+        # racunanje     a_des = a_fb + a_ref - a_rd + a_g
+        self.a_des = self.a_fb + self.a_ref - self.a_rd + self.a_g      # (47)
 
 
     def calculate_R_des(self):
@@ -190,7 +216,8 @@ class HLC():
         x_b = r_ref[0]              # (18)
         y_b = r_ref[1]              # (19)
         z_b = r_ref[2]              # (20)
-        self.C_cmd = np.dot(self.a_des, z_b) - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
+        C_cmd = np.dot(self.a_des, z_b) - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
+        self.C_cmd = C_cmd/self.C_max
 
 
     def run(self):
