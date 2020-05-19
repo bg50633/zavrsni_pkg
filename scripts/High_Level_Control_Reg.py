@@ -119,7 +119,7 @@ class HLC():
 
     def matrix2euler(self, R):
         phi = atan2(R[2][1], R[2][2])
-        the = atan2(R[2][0], sqrt(R[2][1]^2 + R[2][2]^2))
+        the = atan2(R[2][0], sqrt(R[2][1] ** 2 + R[2][2] ** 2))
         ksi = atan2(R[1][0], R[0][0])
         return phi, the, ksi
 
@@ -195,11 +195,7 @@ class HLC():
         x_b = r_ref[0]              # (18)
         y_b = r_ref[1]              # (19)
         z_b = r_ref[2]              # (20)
-        self.C_cmd = np.dot(self.a_des, z_b) - self.k_h*(np.dot(self.v_meas,(x_b+y_b)))^2       # (54)
-
-
-
-
+        self.C_cmd = np.dot(self.a_des, z_b) - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
 
 
     def run(self):
