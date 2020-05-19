@@ -15,10 +15,24 @@ class HLC():
 
     def __init__(self):
         self.attitude_pub = rospy.Publisher('mavros/setpoint_raw/attitude', AttitudeTarget, queue_size=1)
+
+        # Initialize all class variables used in self.odom_sub_callback
+        self.p_meas_x = 0
+        self.p_meas_y = 0
+        self.p_meas_z = 0
+
+        self.v_meas_x = 0
+        self.v_meas_y = 0
+        self.v_meas_z = 0
+
+        self.q_w_meas = 1
+        self.q_x_meas = 0
+        self.q_y_meas = 0
+        self.q_z_meas = 0
         self.odom_sub = rospy.Subscriber('mavros/global_position/local', Odometry, self.odom_sub_callback)
         
         self.trajectory_started = False
-        self.trajectory_sub = rospy.Subscriber('mavros/trajectory', MultiDOFJointTrajectoryPoint, self.trajectory_sub_callback)       # potrebno odrediti topic!
+        self.trajectory_sub = rospy.Subscriber('mavros/trajectory', MultiDOFJointTrajectoryPoint, self.trajectory_sub_callback)
 
         self.attitude = AttitudeTarget()
         self.R_des = Quaternion()
