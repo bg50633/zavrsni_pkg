@@ -3,6 +3,7 @@
 import rospy
 import numpy as np
 from scipy import linalg
+from scipy.spatial.transform import Rotation
 from math import *
 
 from mavros_msgs.msg import AttitudeTarget
@@ -12,6 +13,7 @@ from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Vector3
 
 import tf
+
 
 class HLC():
 
@@ -170,9 +172,12 @@ class HLC():
         self.a_ref = np.array([self.a_ref_x, self.a_ref_y, self.a_ref_z])
         self.w_ref = np.array([self.w_ref_x, self.w_ref_y, self.w_ref_z])
 
-        phi, the, ksi = self.quaternion2euler(self.q_w_ref, self.q_x_ref, self.q_y_ref, self.q_z_ref)
-        self.R_ref = self.euler2matrix(phi, the, ksi)
-        self.heading = ksi
+        # phi, the, ksi = self.quaternion2euler(self.q_w_ref, self.q_x_ref, self.q_y_ref, self.q_z_ref)
+        #self.R_ref = self.euler2matrix(phi, the, ksi)
+        reference_quaternion = [self.q_x_ref, self.q_y_ref, self.q_z_ref, self.q_w_ref]
+        self.R_ref = tf.transformations.quaternion_matrix(reference_quaternion)[:3,:3]
+        euler_angles = tf.transformations.euler_from_quaternion(reference_quaternion)
+        self.heading = euler_angles[2]
 
 
     def calculate_measured_values(self):
@@ -180,8 +185,11 @@ class HLC():
         self.p_meas = np.array([self.p_meas_x, self.p_meas_y, self.p_meas_z])
         self.v_meas = np.array([self.v_meas_x, self.v_meas_y, self.v_meas_z])
         
-        phi, the, ksi = self.quaternion2euler(self.q_w_meas, self.q_x_meas, self.q_y_meas, self.q_z_meas)
-        self.R_meas = self.euler2matrix(phi, the, ksi)
+        #phi, the, ksi = self.quaternion2euler(self.q_w_meas, self.q_x_meas, self.q_y_meas, self.q_z_meas)
+        #self.R_meas = self.euler2matrix(phi, the, ksi)
+        self.R_meas = tf.transformations.quaternion_matrix(
+            [self.q_x_meas, self.q_y_meas, self.q_z_meas, self.q_w_meas]
+        )[:3,:3]
 
 
     def calculate_a_des(self):
