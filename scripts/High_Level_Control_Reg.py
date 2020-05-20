@@ -151,10 +151,19 @@ class HLC():
 
 
     def matrix2euler(self, R):
-        phi = atan2(R[2][1], R[2][2])
-        the = atan2(R[2][0], sqrt(R[2][1] ** 2 + R[2][2] ** 2))
-        ksi = atan2(R[1][0], R[0][0])
-        return phi, the, ksi
+        sy = sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+        singular = sy < 1e-6
+
+        if  not singular :
+            x = atan2(R[2,1] , R[2,2])
+            y = atan2(-R[2,0], sy)
+            z = atan2(R[1,0], R[0,0])
+        else :
+            x = atan2(-R[1,2], R[1,1])
+            y = atan2(-R[2,0], sy)
+            z = 0
+
+        return np.array([x, y, z])
 
     def euler2quaternion(self, phi, the, ksi):
         qw = cos(phi/2)*cos(the/2)*cos(ksi/2) + sin(phi/2)*sin(the/2)*sin(ksi/2)
