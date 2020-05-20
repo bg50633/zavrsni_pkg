@@ -188,6 +188,10 @@ class HLC():
         euler_angles = tf.transformations.euler_from_quaternion(reference_quaternion)
         self.heading = euler_angles[2]
 
+        np.set_printoptions(suppress=True)
+        print("Referent rotation: ")
+        print(self.R_ref)
+
 
     def calculate_measured_values(self):
         # formiranje varijabli povratne veze
@@ -199,6 +203,10 @@ class HLC():
         self.R_meas = tf.transformations.quaternion_matrix(
             [self.q_x_meas, self.q_y_meas, self.q_z_meas, self.q_w_meas]
         )[:3,:3]
+
+        np.set_printoptions(suppress=True)
+        print("Measured rotation: ")
+        print(self.R_meas)
 
 
     def calculate_a_des(self):
@@ -218,6 +226,10 @@ class HLC():
         x_des = np.cross(y_c, z_des)/linalg.norm(np.cross(y_c, z_des))      # (51)
         y_des = np.cross(z_des, x_des)                                      # (52)
         R_des = np.array([x_des, y_des, z_des]).T                           # (53)
+        
+        np.set_printoptions(suppress=True)
+        print("Desired rotation: ")
+        print(R_des)
 
         phi, the, ksi = self.matrix2euler(R_des)
         q = tf.transformations.quaternion_from_euler(phi, the, ksi)
@@ -239,7 +251,7 @@ class HLC():
         x_b = r_ref[0]              # (18)
         y_b = r_ref[1]              # (19)
         z_b = r_ref[2]              # (20)
-        C_cmd = np.dot(self.a_des, z_b) # - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
+        C_cmd = np.dot(self.a_des, z_b)  - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
         self.C_cmd = C_cmd / self.C_max
 
 
@@ -259,6 +271,7 @@ class HLC():
                 self.attitude.thrust = self.C_cmd
                 
                 self.attitude_pub.publish(self.attitude)
+                print("\n\n")
                 rospy.sleep(0.02)
 
 
