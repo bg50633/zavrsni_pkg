@@ -11,7 +11,7 @@ from trajectory_msgs.msg import MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Vector3
 
-from tf.transformations import *
+import tf
 
 class HLC():
 
@@ -70,7 +70,13 @@ class HLC():
 
         self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
-        self.C_max = 137.8
+
+        self.uav_mass = 0.5
+        self.max_rpm = 1000
+        self.motor_constant = 8.54858e-06
+        self.f_max = self.motor_constant * self.max_rpm ** 2
+        self.C_max = self.f_max / self.uav_mass
+        print(self.C_max)
 
 
     def odom_sub_callback(self, data):
@@ -216,8 +222,8 @@ class HLC():
         x_b = r_ref[0]              # (18)
         y_b = r_ref[1]              # (19)
         z_b = r_ref[2]              # (20)
-        C_cmd = np.dot(self.a_des, z_b) - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
-        self.C_cmd = C_cmd/self.C_max
+        C_cmd = np.dot(self.a_des, z_b) # - self.k_h*(np.dot(self.v_meas,(x_b+y_b))) ** 2       # (54)
+        self.C_cmd = C_cmd / self.C_max
 
 
     def run(self):
@@ -236,7 +242,7 @@ class HLC():
                 self.attitude.thrust = self.C_cmd
                 
                 self.attitude_pub.publish(self.attitude)
-                rospy.sleep(1.0)
+                rospy.sleep(0.02)
 
 
 if __name__=='__main__':
