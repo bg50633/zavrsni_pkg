@@ -197,11 +197,11 @@ class HLC():
         R_des = np.array([x_des, y_des, z_des]).T                           # (53)
 
         phi, the, ksi = self.matrix2euler(R_des)
-        qw, qx, qy, qz = self.euler2quaternion(phi, the, ksi)
-        self.R_des.w = qw
-        self.R_des.x = qx
-        self.R_des.y = qy
-        self.R_des.z = qz
+        q = tf.transformations.quaternion_from_euler(phi, the, ksi)
+        self.R_des.w = q[3]
+        self.R_des.x = q[0]
+        self.R_des.y = q[1]
+        self.R_des.z = q[2]
 
 
     def calculate_W_des(self):
