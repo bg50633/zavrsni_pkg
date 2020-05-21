@@ -66,15 +66,15 @@ class HLC():
         self.C_cmd = 0.
 
 
-        self.K_pos = np.array([[1,0,0],[0,1,0],[0,0,1]])
-        self.K_vel = np.array([[0.1,0,0],[0,0.1,0],[0,0,0.1]])
+        self.K_pos = np.array([[4,0,0],[0,4,0],[0,0,4]])
+        self.K_vel = np.array([[0.3,0,0],[0,0.3,0],[0,0,0.3]])
         self.D = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.01]])
 
         self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
 
         self.uav_mass = 0.5
-        self.max_rpm = 1000
+        self.max_rpm = 1070
         self.motor_constant = 8.54858e-06
         self.f_max = self.motor_constant * self.max_rpm ** 2
         self.C_max = self.f_max / self.uav_mass
