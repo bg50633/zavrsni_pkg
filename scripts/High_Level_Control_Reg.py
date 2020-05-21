@@ -181,8 +181,6 @@ class HLC():
         self.a_ref = np.array([self.a_ref_x, self.a_ref_y, self.a_ref_z])
         self.w_ref = np.array([self.w_ref_x, self.w_ref_y, self.w_ref_z])
 
-        # phi, the, ksi = self.quaternion2euler(self.q_w_ref, self.q_x_ref, self.q_y_ref, self.q_z_ref)
-        #self.R_ref = self.euler2matrix(phi, the, ksi)
         reference_quaternion = [self.q_x_ref, self.q_y_ref, self.q_z_ref, self.q_w_ref]
         self.R_ref = tf.transformations.quaternion_matrix(reference_quaternion)[:3,:3]
         euler_angles = tf.transformations.euler_from_quaternion(reference_quaternion)
@@ -191,6 +189,8 @@ class HLC():
         np.set_printoptions(suppress=True)
         print("Referent rotation: ")
         print(self.R_ref)
+        print("Referent heading: ")
+        print(self.heading)
 
 
     def calculate_measured_values(self):
@@ -198,8 +198,6 @@ class HLC():
         self.p_meas = np.array([self.p_meas_x, self.p_meas_y, self.p_meas_z])
         self.v_meas = np.array([self.v_meas_x, self.v_meas_y, self.v_meas_z])
         
-        #phi, the, ksi = self.quaternion2euler(self.q_w_meas, self.q_x_meas, self.q_y_meas, self.q_z_meas)
-        #self.R_meas = self.euler2matrix(phi, the, ksi)
         self.R_meas = tf.transformations.quaternion_matrix(
             [self.q_x_meas, self.q_y_meas, self.q_z_meas, self.q_w_meas]
         )[:3,:3]
@@ -217,6 +215,11 @@ class HLC():
         # racunanje     a_des = a_fb + a_ref - a_rd + a_g
         self.a_des = self.a_fb + self.a_ref - self.a_rd + self.a_g      # (47)
 
+        np.set_printoptions(suppress=True)
+        print("Desired acceleration: ")
+        print(self.a_des)
+
+
 
     def calculate_R_des(self):
         x_c = np.array([cos(self.heading), sin(self.heading), 0])       # (16)
@@ -231,8 +234,8 @@ class HLC():
         print("Desired rotation: ")
         print(R_des)
 
-        phi, the, ksi = self.matrix2euler(R_des)
-        q = tf.transformations.quaternion_from_euler(phi, the, ksi)
+        euler_angles = self.matrix2euler(R_des)
+        q = tf.transformations.quaternion_from_euler(euler_angles[0], euler_angles[1], euler_angles[2])
         self.R_des.w = q[3]
         self.R_des.x = q[0]
         self.R_des.y = q[1]
