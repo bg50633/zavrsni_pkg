@@ -272,7 +272,8 @@ class HLC():
                 self.attitude.orientation = self.R_des
                 self.attitude.body_rate = self.W_des
                 self.attitude.thrust = self.C_cmd
-                
+                self.attitude.type_mask = 7
+
                 self.attitude_pub.publish(self.attitude)
                 print("\n\n")
                 rospy.sleep(0.02)
