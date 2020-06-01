@@ -11,6 +11,8 @@ from nav_msgs.msg import Odometry
 from trajectory_msgs.msg import MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Imu
 
 import tf
 
@@ -19,6 +21,16 @@ class HLC():
 
     def __init__(self):
         self.attitude_pub = rospy.Publisher('mavros/setpoint_raw/attitude', AttitudeTarget, queue_size=1)
+
+        self.angle_sp_pub = rospy.Publisher('uav/euler_sp', Vector3, queue_size=1)
+        self.angle_mv_pub = rospy.Publisher('uav/euler_mv', Vector3, queue_size=1)
+        self.angle_rate_sp_pub = rospy.Publisher('uav/angular_sp', Twist, queue_size=1)
+        self.angle_rate_mv_pub = rospy.Publisher('uav/angular_mv', Twist, queue_size=1)
+
+        self.angle_sp = Vector3()
+        self.angle_mv = Vector3()
+        self.angle_rate_sp = Twist()
+        self.angle_rate_mv = Twist()
 
         # Initialize all class variables used in self.odom_sub_callback
         self.p_meas_x = 0
@@ -34,6 +46,12 @@ class HLC():
         self.q_y_meas = 0
         self.q_z_meas = 0
         self.odom_sub = rospy.Subscriber('mavros/global_position/local', Odometry, self.odom_sub_callback)
+
+        # Initialize all class variables used in self.imu_sub_callback
+        self.w_meas_x = 0
+        self.w_meas_y = 0
+        self.w_meas_z = 0
+        self.imu_sub = rospy.Subscriber('mavros/imu/data', Imu, self.imu_sub_callback)
 
         # Initialize all class variables used in self.trajectory_sub_callback
         self.trajectory_started = False
@@ -66,7 +84,7 @@ class HLC():
         self.C_cmd = 0.
 
 
-        self.K_pos = np.array([[4,0,0],[0,4,0],[0,0,4]])
+        self.K_pos = np.array([[3.5,0,0],[0,3.5,0],[0,0,3.5]])
         self.K_vel = np.array([[0.3,0,0],[0,0.3,0],[0,0,0.3]])
         self.D = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.01]])
 
@@ -98,6 +116,11 @@ class HLC():
         self.q_y_meas = data.pose.pose.orientation.y
         self.q_z_meas = data.pose.pose.orientation.z
 
+    def imu_sub_callback(self, data):
+        # dohvacanje mjerenih vrijednosti kutne brzine
+        self.w_meas_x = data.angular_velocity.x
+        self.w_meas_y = data.angular_velocity.y
+        self.w_meas_z = data.angular_velocity.z
 
     def trajectory_sub_callback(self, data):
         self.trajectory_started = True
@@ -186,6 +209,14 @@ class HLC():
         euler_angles = tf.transformations.euler_from_quaternion(reference_quaternion)
         self.heading = euler_angles[2]
 
+        self.angle_sp.x = euler_angles[0]
+        self.angle_sp.y = euler_angles[1]
+        self.angle_sp.z = euler_angles[2]
+
+        self.angle_rate_sp.angular.x = self.w_ref_x
+        self.angle_rate_sp.angular.y = self.w_ref_y
+        self.angle_rate_sp.angular.z = self.w_ref_z
+
         np.set_printoptions(suppress=True)
         print("Referent rotation: ")
         print(self.R_ref)
@@ -198,9 +229,17 @@ class HLC():
         self.p_meas = np.array([self.p_meas_x, self.p_meas_y, self.p_meas_z])
         self.v_meas = np.array([self.v_meas_x, self.v_meas_y, self.v_meas_z])
         
-        self.R_meas = tf.transformations.quaternion_matrix(
-            [self.q_x_meas, self.q_y_meas, self.q_z_meas, self.q_w_meas]
-        )[:3,:3]
+        measured_quaternion = [self.q_x_meas, self.q_y_meas, self.q_z_meas, self.q_w_meas]
+        self.R_meas = tf.transformations.quaternion_matrix(measured_quaternion)[:3,:3]
+        euler_angles = tf.transformations.euler_from_quaternion(measured_quaternion)
+
+        self.angle_mv.x = euler_angles[0]
+        self.angle_mv.y = euler_angles[1]
+        self.angle_mv.z = euler_angles[2]
+
+        self.angle_rate_mv.angular.x = self.w_meas_x
+        self.angle_rate_mv.angular.y = self.w_meas_y
+        self.angle_rate_mv.angular.z = self.w_meas_z
 
         np.set_printoptions(suppress=True)
         print("Measured rotation: ")
@@ -247,6 +286,8 @@ class HLC():
         self.W_des.x = W_des[0]
         self.W_des.y = W_des[1]
         self.W_des.z = W_des[2]
+        print("Desired angle_rate: ")
+        print(W_des)
 
 
     def calculate_C_cmd(self):
@@ -272,9 +313,13 @@ class HLC():
                 self.attitude.orientation = self.R_des
                 self.attitude.body_rate = self.W_des
                 self.attitude.thrust = self.C_cmd
-                self.attitude.type_mask = 7
+                self.attitude.type_mask = 0
 
                 self.attitude_pub.publish(self.attitude)
+                self.angle_sp_pub.publish(self.angle_sp)
+                self.angle_mv_pub.publish(self.angle_mv)
+                self.angle_rate_sp_pub.publish(self.angle_rate_sp)
+                self.angle_rate_mv_pub.publish(self.angle_rate_mv)
                 print("\n\n")
                 rospy.sleep(0.02)
 
