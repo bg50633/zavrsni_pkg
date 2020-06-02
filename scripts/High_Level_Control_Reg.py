@@ -91,6 +91,9 @@ class HLC():
         self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
 
+        self.old_heading = 0
+        self.dt = 1
+
         self.uav_mass = 0.5
         self.max_rpm = 1070
         self.motor_constant = 8.54858e-06
@@ -202,20 +205,57 @@ class HLC():
         self.p_ref = np.array([self.p_ref_x, self.p_ref_y, self.p_ref_z])
         self.v_ref = np.array([self.v_ref_x, self.v_ref_y, self.v_ref_z])
         self.a_ref = np.array([self.a_ref_x, self.a_ref_y, self.a_ref_z])
-        self.w_ref = np.array([self.w_ref_x, self.w_ref_y, self.w_ref_z])
 
         reference_quaternion = [self.q_x_ref, self.q_y_ref, self.q_z_ref, self.q_w_ref]
-        self.R_ref = tf.transformations.quaternion_matrix(reference_quaternion)[:3,:3]
+        #self.R_ref = tf.transformations.quaternion_matrix(reference_quaternion)[:3,:3]
         euler_angles = tf.transformations.euler_from_quaternion(reference_quaternion)
         self.heading = euler_angles[2]
+
+        d_x = self.D[0][0]
+        d_y = self.D[1][1]
+        d_z = self.D[2][2]
+
+        alpha = self.a_ref + self.a_g + d_x * self.v_ref                    # (14)
+        beta = self.a_ref + self.a_g + d_y * self.v_ref                      # (15)
+
+        self.x_c = np.array([cos(self.heading), sin(self.heading), 0])       # (16)
+        self.y_c = np.array([-sin(self.heading), cos(self.heading), 0])      # (17)
+
+        x_b = np.cross(self.y_c, alpha)/linalg.norm(np.cross(self.y_c, alpha))    # (18)
+        y_b = np.cross(beta, x_b)/linalg.norm(np.cross(beta, x_b))                # (19)
+        z_b = np.cross(x_b, y_b)                                                  # (20)
+        self.R_ref = np.array([x_b, y_b, z_b]).T                                  # (21)
+
+        c = np.dot(z_b, self.a_ref + self.a_g + d_z * self.v_ref)           # (22)
+        c_cmd = c - self.k_h * (np.dot(self.v_ref,(x_b + y_b))) ** 2        # (23)
+
+        self.heading_rate = (self.heading - self.old_heading) / self.dt
+
+        B1 = c - (d_z - d_x) * np.dot(z_b, self.v_ref)
+        C1 = -(d_x - d_y) * np.dot(y_b, self.v_ref)
+        D1 = d_x * np.dot(x_b, self.a_ref)
+        A2 = c + (d_y - d_z) * np.dot(z_b, self.v_ref)
+        C2 = (d_x - d_y) * np.dot(x_b, self.v_ref)
+        D2 = -d_y * np.dot(y_b, self.a_ref)
+        B3 = -np.dot(self.y_c, z_b)
+        C3 = linalg.norm(np.cross(self.y_c, z_b))
+        D3 = self.heading_rate * np.dot(self.x_c, x_b)
+
+        w_x = (-B1*C2*D3 + B1*C3*D2 - B3*C1*D2 + B3*C2*D1) / (A2*(B1*C3 - B3*C1))       # (27)
+        w_y = (-C1*D3 + C3*D1) / (B1*C3 - B3*C1)                                        # (28)
+        w_z = (B1*D3 - B3*D1) / (B1*C3 - B3*C1)                                         # (29)
+
+        self.w_ref = np.array([w_x, w_y, w_z])
+
+
 
         self.angle_sp.x = euler_angles[0]
         self.angle_sp.y = euler_angles[1]
         self.angle_sp.z = euler_angles[2]
 
-        self.angle_rate_sp.angular.x = self.w_ref_x
-        self.angle_rate_sp.angular.y = self.w_ref_y
-        self.angle_rate_sp.angular.z = self.w_ref_z
+        self.angle_rate_sp.angular.x = w_x
+        self.angle_rate_sp.angular.y = w_y
+        self.angle_rate_sp.angular.z = w_z
 
         np.set_printoptions(suppress=True)
         print("Referent rotation: ")
@@ -261,13 +301,10 @@ class HLC():
 
 
     def calculate_R_des(self):
-        x_c = np.array([cos(self.heading), sin(self.heading), 0])       # (16)
-        y_c = np.array([-sin(self.heading), cos(self.heading), 0])      # (17)
-
-        z_des = self.a_des/linalg.norm(self.a_des)                          # (50)
-        x_des = np.cross(y_c, z_des)/linalg.norm(np.cross(y_c, z_des))      # (51)
-        y_des = np.cross(z_des, x_des)                                      # (52)
-        R_des = np.array([x_des, y_des, z_des]).T                           # (53)
+        z_des = self.a_des/linalg.norm(self.a_des)                                      # (50)
+        x_des = np.cross(self.y_c, z_des)/linalg.norm(np.cross(self.y_c, z_des))        # (51)
+        y_des = np.cross(z_des, x_des)                                                  # (52)
+        R_des = np.array([x_des, y_des, z_des]).T                                       # (53)
         
         np.set_printoptions(suppress=True)
         print("Desired rotation: ")
