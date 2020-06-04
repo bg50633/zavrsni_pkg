@@ -84,9 +84,12 @@ class HLC():
         self.C_cmd = 0.
 
 
-        self.K_pos = np.array([[3.,0,0],[0,3.,0],[0,0,3.]])
-        self.K_vel = np.array([[0.25,0,0],[0,0.25,0],[0,0,0.25]])
-        self.D = np.array([[0.2, 0, 0], [0, 0.1, 0], [0, 0, 0.0]])
+        self.K_pos = np.array([[5.125 ,0,0],[0, 5.125, 0],[0,0, 5]])
+        self.K_vel = np.array([[3.1,0,0],[0,3.1,0],[0,0,0.25]])
+        
+        # self.D = np.array([[0.49, 0, 0], [0, 0.49, 0], [0, 0, 0.0]])
+        # self.D = np.array([[0.278, 0, 0], [0, 0.278, 0], [0, 0, 0.0]]) # Lemniscate
+        self.D = np.array([[0., 0, 0], [0, 0., 0], [0, 0, 0.0]])
 
         self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
@@ -208,9 +211,11 @@ class HLC():
         self.a_ref = np.array([self.a_ref_x, self.a_ref_y, self.a_ref_z])
 
         reference_quaternion = [self.q_x_ref, self.q_y_ref, self.q_z_ref, self.q_w_ref]
-        #self.R_ref = tf.transformations.quaternion_matrix(reference_quaternion)[:3,:3]
+        self.R_ref = tf.transformations.quaternion_matrix(reference_quaternion)[:3,:3]
         euler_angles = tf.transformations.euler_from_quaternion(reference_quaternion)
         self.heading = euler_angles[2]
+        self.heading_rate = (self.heading - self.old_heading) / self.dt
+        self.old_heading = self.heading
 
         d_x = self.D[0][0]
         d_y = self.D[1][1]
@@ -225,13 +230,13 @@ class HLC():
         x_b = np.cross(self.y_c, alpha)/linalg.norm(np.cross(self.y_c, alpha))    # (18)
         y_b = np.cross(beta, x_b)/linalg.norm(np.cross(beta, x_b))                # (19)
         z_b = np.cross(x_b, y_b)                                                 # (20)
-        self.R_ref = np.array([x_b, y_b, z_b]).T                                  # (21)
+        
+        # Calculate only to get referent euler angles
+        R_ref_TODO = np.array([x_b, y_b, z_b]).T                                  # (21)
+        euler_angles = tf.transformations.euler_from_matrix(R_ref_TODO)
 
         c = np.dot(z_b, self.a_ref + self.a_g + d_z * self.v_ref)           # (22)
         # c_cmd = c - self.k_h * (np.dot(self.v_ref,(x_b + y_b))) ** 2        # (23)
-
-        self.heading_rate = (self.heading - self.old_heading) / self.dt
-        self.old_heading = self.heading
 
         B1 = c - (d_z - d_x) * np.dot(z_b, self.v_ref)
         C1 = -(d_x - d_y) * np.dot(y_b, self.v_ref)
@@ -347,10 +352,11 @@ class HLC():
                 self.calculate_W_des()
                 self.calculate_C_cmd()
 
+                self.attitude.header.stamp = rospy.Time.now()
                 self.attitude.orientation = self.R_des
                 self.attitude.body_rate = self.W_des
                 self.attitude.thrust = self.C_cmd
-                self.attitude.type_mask = 0
+                self.attitude.type_mask = 7
 
                 self.attitude_pub.publish(self.attitude)
                 self.angle_sp_pub.publish(self.angle_sp)
