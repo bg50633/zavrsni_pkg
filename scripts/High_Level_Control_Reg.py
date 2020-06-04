@@ -84,15 +84,16 @@ class HLC():
         self.C_cmd = 0.
 
 
-        self.K_pos = np.array([[3.5,0,0],[0,3.5,0],[0,0,3.5]])
-        self.K_vel = np.array([[0.3,0,0],[0,0.3,0],[0,0,0.3]])
-        self.D = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.01]])
+        self.K_pos = np.array([[3.,0,0],[0,3.,0],[0,0,3.]])
+        self.K_vel = np.array([[0.25,0,0],[0,0.25,0],[0,0,0.25]])
+        self.D = np.array([[0.2, 0, 0], [0, 0.1, 0], [0, 0, 0.0]])
 
         self.a_g = np.array([0, 0, 9.81])
         self.k_h = 0.009
 
+        # TODO: initialize old_heading properly
         self.old_heading = 0
-        self.dt = 1
+        self.dt = 0.02
 
         self.uav_mass = 0.5
         self.max_rpm = 1070
@@ -223,13 +224,14 @@ class HLC():
 
         x_b = np.cross(self.y_c, alpha)/linalg.norm(np.cross(self.y_c, alpha))    # (18)
         y_b = np.cross(beta, x_b)/linalg.norm(np.cross(beta, x_b))                # (19)
-        z_b = np.cross(x_b, y_b)                                                  # (20)
+        z_b = np.cross(x_b, y_b)                                                 # (20)
         self.R_ref = np.array([x_b, y_b, z_b]).T                                  # (21)
 
         c = np.dot(z_b, self.a_ref + self.a_g + d_z * self.v_ref)           # (22)
-        c_cmd = c - self.k_h * (np.dot(self.v_ref,(x_b + y_b))) ** 2        # (23)
+        # c_cmd = c - self.k_h * (np.dot(self.v_ref,(x_b + y_b))) ** 2        # (23)
 
         self.heading_rate = (self.heading - self.old_heading) / self.dt
+        self.old_heading = self.heading
 
         B1 = c - (d_z - d_x) * np.dot(z_b, self.v_ref)
         C1 = -(d_x - d_y) * np.dot(y_b, self.v_ref)
@@ -237,7 +239,7 @@ class HLC():
         A2 = c + (d_y - d_z) * np.dot(z_b, self.v_ref)
         C2 = (d_x - d_y) * np.dot(x_b, self.v_ref)
         D2 = -d_y * np.dot(y_b, self.a_ref)
-        B3 = -np.dot(self.y_c, z_b)
+        B3 = - np.dot(self.y_c, z_b)
         C3 = linalg.norm(np.cross(self.y_c, z_b))
         D3 = self.heading_rate * np.dot(self.x_c, x_b)
 
@@ -246,8 +248,6 @@ class HLC():
         w_z = (B1*D3 - B3*D1) / (B1*C3 - B3*C1)                                         # (29)
 
         self.w_ref = np.array([w_x, w_y, w_z])
-
-
 
         self.angle_sp.x = euler_angles[0]
         self.angle_sp.y = euler_angles[1]
@@ -324,7 +324,7 @@ class HLC():
         self.W_des.y = W_des[1]
         self.W_des.z = W_des[2]
         print("Desired angle_rate: ")
-        print(W_des)
+        print(self.W_des)
 
 
     def calculate_C_cmd(self):
@@ -358,7 +358,7 @@ class HLC():
                 self.angle_rate_sp_pub.publish(self.angle_rate_sp)
                 self.angle_rate_mv_pub.publish(self.angle_rate_mv)
                 print("\n\n")
-                rospy.sleep(0.02)
+                rospy.sleep(self.dt)
 
 
 if __name__=='__main__':

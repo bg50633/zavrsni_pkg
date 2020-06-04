@@ -1,0 +1,41 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/lmark/new_ws/devel/include/**",
+                "/opt/ros/melodic/include/**",
+                "/home/lmark/new_ws/src/aerial_manipulators/aerial_manipulators_control/include/**",
+                "/home/lmark/new_ws/src/ardupilot_gazebo/include/**",
+                "/home/lmark/new_ws/src/brick_pickup_sm/include/**",
+                "/home/lmark/new_ws/src/MBZIRC_color_filter/include/**",
+                "/home/lmark/new_ws/src/larics_motion_planning/include/**",
+                "/home/lmark/new_ws/src/mav_comm/mav_msgs/include/**",
+                "/home/lmark/new_ws/src/mmuav_gazebo/mmuav_plugins/include/**",
+                "/home/lmark/new_ws/src/ethzasl_msf/msf_core/include/**",
+                "/home/lmark/new_ws/src/ethzasl_msf/msf_timing/include/**",
+                "/home/lmark/new_ws/src/ethzasl_msf/msf_updates/include/**",
+                "/home/lmark/new_ws/src/multirotor_transformations/include/**",
+                "/home/lmark/new_ws/src/pcl_pattern_matching/include/**",
+                "/home/lmark/new_ws/src/mav_comm/planning_msgs/include/**",
+                "/home/lmark/new_ws/src/pointcloud_filter/include/**",
+                "/home/lmark/new_ws/src/potential_fields_gazebo/potential_fields/include/**",
+                "/home/lmark/new_ws/src/rotors_simulator/rotors_control/include/**",
+                "/home/lmark/new_ws/src/rotors_simulator/rotors_gazebo_plugins/include/**",
+                "/home/lmark/new_ws/src/rotors_simulator/rotors_joy_interface/include/**",
+                "/home/lmark/new_ws/src/storm_gazebo_ros_magnet/include/**",
+                "/home/lmark/new_ws/src/uav_ros_control/uav_ros_control/include/**",
+                "/home/lmark/new_ws/src/velodyne_simulator/velodyne_gazebo_plugins/include/**",
+                "/usr/include/**"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/lib/ccache/clang",
+            "cStandard": "c11"
+        }
+    ],
+    "version": 4
+}
